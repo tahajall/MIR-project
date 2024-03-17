@@ -1,3 +1,4 @@
+import requests
 from requests import get
 from bs4 import BeautifulSoup
 from collections import deque
@@ -11,7 +12,9 @@ class IMDbCrawler:
     put your own user agent in the headers
     """
     headers = {
-        'User-Agent': None
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+                      ' AppleWebKit/537.36 (KHTML, like Gecko)'
+                      ' Chrome/111.0.0.0 Safari/537.36'
     }
     top_250_URL = 'https://www.imdb.com/chart/top/'
 
@@ -25,10 +28,10 @@ class IMDbCrawler:
             The number of pages to crawl
         """
         # TODO
-        self.crawling_threshold = None
-        self.not_crawled = None
-        self.crawled = None
-        self.added_ids = None
+        self.crawling_threshold = crawling_threshold
+        self.not_crawled = []
+        self.crawled = []
+        self.added_ids = []
         self.add_list_lock = None
         self.add_queue_lock = None
 
@@ -46,7 +49,6 @@ class IMDbCrawler:
         str
             The id of the site
         """
-        # TODO
         return URL.split('/')[4]
 
     def write_to_file_as_json(self):
@@ -82,16 +84,39 @@ class IMDbCrawler:
         requests.models.Response
             The response of the get request
         """
-        # TODO
-        return None
+        return get(url=URL, headers=self.headers)
 
     def extract_top_250(self):
         """
         Extract the top 250 movies from the top 250 page and use them as seed for the crawler to start crawling.
         """
-        # TODO update self.not_crawled and self.added_ids
+        r = self.crawl(self.top_250_URL)
+        soup = BeautifulSoup(r.content, "html.parser")
+        urls = self.get_next_links(soup)
+        self.not_crawled = urls
+        ids = []
+        for url in urls:
+            ids.append(self.get_id_from_URL(url))
+        self.added_ids = ids
 
-
+    def get_next_links(self,soup,id=None):
+        link_elements = soup.select("a[href]")
+        urls = []
+        for link_element in link_elements:
+            url = link_element['href']
+            if id :
+                if url.startswith("/title") and not(id in url):
+                    split = url.split('/')
+                    urls.append('/' + split[1] + '/' + split[2])
+            else:
+                if url.startswith("/title") :
+                    split = url.split('/')
+                    urls.append('/' + split[1] + '/' + split[2])
+        temp_urls = set(urls)
+        urls = []
+        for url in temp_urls:
+            urls.append("https://www.imdb.com" + url)
+        return urls
     def get_imdb_instance(self):
         return {
             'id': None,  # str
@@ -127,20 +152,16 @@ class IMDbCrawler:
         You are free to use it or not. If used, not to forget safe access to the shared resources.
         """
 
-        # help variables
-        WHILE_LOOP_CONSTRAINTS = None
-        NEW_URL = None
-        THERE_IS_NOTHING_TO_CRAWL = None
 
         self.extract_top_250()
         futures = []
         crawled_counter = 0
 
         with ThreadPoolExecutor(max_workers=20) as executor:
-            while WHILE_LOOP_CONSTRAINTS:
-                URL = NEW_URL
+            while len(self.crawled) <= self.crawling_threshold:
+                URL = self.not_crawled.pop(0)
                 futures.append(executor.submit(self.crawl_page_info, URL))
-                if THERE_IS_NOTHING_TO_CRAWL:
+                if len(self.not_crawled ) == 0:
                     wait(futures)
                     futures = []
 
@@ -155,8 +176,17 @@ class IMDbCrawler:
             The URL of the site
         """
         print("new iteration")
-        # TODO
-        pass
+        id = self.get_id_from_URL(URL)
+        r = self.crawl(URL)
+        soup = BeautifulSoup(r.content, "html.parser")
+        urls = self.get_next_links(soup,id)
+        for url in urls:
+            if (url not in self.not_crawled) and (url not in self.crawled) :
+                self.not_crawled.append(url)
+        movie = self.get_imdb_instance()
+        movie['id'] = id
+        self.extract_movie_info(res=r,movie=movie,URL=URL)
+        self.crawled.append(movie)
 
     def extract_movie_info(self, res, movie, URL):
         """
@@ -172,23 +202,24 @@ class IMDbCrawler:
             The URL of the site
         """
         # TODO
-        movie['title'] = None
-        movie['first_page_summary'] = None
-        movie['release_year'] = None
-        movie['mpaa'] = None
-        movie['budget'] = None
-        movie['gross_worldwide'] = None
-        movie['directors'] = None
-        movie['writers'] = None
-        movie['stars'] = None
-        movie['related_links'] = None
-        movie['genres'] = None
-        movie['languages'] = None
-        movie['countries_of_origin'] = None
-        movie['rating'] = None
-        movie['summaries'] = None
-        movie['synopsis'] = None
-        movie['reviews'] = None
+        soup = BeautifulSoup(res.content, "html.parser")
+        movie['title'] = IMDbCrawler.get_title(soup)
+        movie['first_page_summary'] = IMDbCrawler.get_first_page_summary(soup)
+        movie['release_year'] = IMDbCrawler.get_release_year(soup)
+        movie['mpaa'] = IMDbCrawler.get_mpaa(soup)
+        movie['budget'] = IMDbCrawler.get_budget(soup)
+        movie['gross_worldwide'] = IMDbCrawler.get_gross_worldwide(soup)
+        movie['directors'] = IMDbCrawler.get_director(soup)
+        movie['writers'] = IMDbCrawler.get_writers(soup)
+        movie['stars'] = IMDbCrawler.get_stars(soup)
+        movie['related_links'] = IMDbCrawler.get_related_links(soup)
+        movie['genres'] = IMDbCrawler.get_genres(soup)
+        movie['languages'] = IMDbCrawler.get_languages(soup)
+        movie['countries_of_origin'] = IMDbCrawler.get_countries_of_origin(soup)
+        movie['rating'] = IMDbCrawler.get_rating(soup)
+        movie['summaries'] = IMDbCrawler.get_summary(soup)
+        movie['synopsis'] = IMDbCrawler.get_synopsis(soup)
+        movie['reviews'] = IMDbCrawler.get_reviews_with_scores(soup)
 
     def get_summary_link(url):
         """
@@ -555,8 +586,9 @@ class IMDbCrawler:
 def main():
     imdb_crawler = IMDbCrawler(crawling_threshold=600)
     # imdb_crawler.read_from_file_as_json()
-    imdb_crawler.start_crawling()
-    imdb_crawler.write_to_file_as_json()
+    #imdb_crawler.start_crawling()
+    #imdb_crawler.write_to_file_as_json()
+    #imdb_crawler.crawl_page_info('https://www.imdb.com/title/tt0111161/?ref_=chttp_t_1')
 
 
 if __name__ == '__main__':
