@@ -12,9 +12,7 @@ class IMDbCrawler:
     put your own user agent in the headers
     """
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-                      ' AppleWebKit/537.36 (KHTML, like Gecko)'
-                      ' Chrome/111.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
     }
     top_250_URL = 'https://www.imdb.com/chart/top/'
 
@@ -212,7 +210,7 @@ class IMDbCrawler:
         movie['directors'] = IMDbCrawler.get_director(soup)
         movie['writers'] = IMDbCrawler.get_writers(soup)
         movie['stars'] = IMDbCrawler.get_stars(soup)
-        movie['related_links'] = IMDbCrawler.get_related_links(soup)
+        movie['related_links'] = self.get_related_links(soup)
         movie['genres'] = IMDbCrawler.get_genres(soup)
         movie['languages'] = IMDbCrawler.get_languages(soup)
         movie['countries_of_origin'] = IMDbCrawler.get_countries_of_origin(soup)
@@ -271,10 +269,10 @@ class IMDbCrawler:
 
         """
         try:
-            # TODO
-            pass
+            return soup.select_one('.hero__primary-text').string
         except:
             print("failed to get title")
+            return None
 
     def get_first_page_summary(soup):
         """
@@ -290,10 +288,10 @@ class IMDbCrawler:
             The first page summary of the movie
         """
         try:
-            # TODO
-            pass
+            return json.loads(soup.find('script', type='application/json').string)['props']['pageProps']['aboveTheFoldData']['plot']['plotText']['plainText']
         except:
             print("failed to get first page summary")
+            return None
 
     def get_director(soup):
         """
@@ -309,10 +307,16 @@ class IMDbCrawler:
             The directors of the movie
         """
         try:
-            # TODO
-            pass
+            credits_raw = json.loads(soup.find('script', type='application/json').string)['props']['pageProps']['aboveTheFoldData']['principalCredits']
+            directors = []
+            for credit in credits_raw:
+                if credit['category']['text'] == 'Directors' or credit['category']['text'] == 'Director':
+                    for director in credit['credits']:
+                        directors.append(director['name']['nameText']['text'])
+            return directors
         except:
             print("failed to get director")
+            return None
 
     def get_stars(soup):
         """
@@ -328,10 +332,16 @@ class IMDbCrawler:
             The stars of the movie
         """
         try:
-            # TODO
-            pass
+            credits_raw = json.loads(soup.find('script', type='application/json').string)['props']['pageProps']['aboveTheFoldData']['principalCredits']
+            stars = []
+            for credit in credits_raw:
+                if credit['category']['text'] == 'Stars' or credit['category']['text'] == 'Star':
+                    for star in credit['credits']:
+                        stars.append(star['name']['nameText']['text'])
+            return stars
         except:
             print("failed to get stars")
+            return None
 
     def get_writers(soup):
         """
@@ -347,12 +357,18 @@ class IMDbCrawler:
             The writers of the movie
         """
         try:
-            # TODO
-            pass
+            credits_raw = json.loads(soup.find('script', type='application/json').string)['props']['pageProps']['aboveTheFoldData']['principalCredits']
+            writers = []
+            for credit in credits_raw:
+                if credit['category']['text'] == 'Writers' or credit['category']['text'] == 'Writer':
+                    for writer in credit['credits']:
+                        writers.append(writer['name']['nameText']['text'])
+            return writers
         except:
             print("failed to get writers")
+            return None
 
-    def get_related_links(soup):
+    def get_related_links(self,soup):
         """
         Get the related links of the movie from the More like this section of the page from the soup
 
@@ -366,10 +382,10 @@ class IMDbCrawler:
             The related links of the movie
         """
         try:
-            # TODO
-            pass
+            return self.get_next_links(soup)
         except:
             print("failed to get related links")
+            return None
 
     def get_summary(soup):
         """
@@ -443,10 +459,14 @@ class IMDbCrawler:
             The genres of the movie
         """
         try:
-            # TODO
-            pass
+            genres_raw = json.loads(soup.find('script', type='application/json').string)['props']['pageProps']['aboveTheFoldData']['genres']['genres']
+            genres = []
+            for g in genres_raw:
+                genres.append(g['text'])
+            return genres
         except:
             print("Failed to get generes")
+            return None
 
     def get_rating(soup):
         """
@@ -462,10 +482,10 @@ class IMDbCrawler:
             The rating of the movie
         """
         try:
-            # TODO
-            pass
+            return json.loads(soup.find('script',type='application/json').string)['props']['pageProps']['aboveTheFoldData']['ratingsSummary']['aggregateRating']
         except:
             print("failed to get rating")
+            return None
 
     def get_mpaa(soup):
         """
@@ -481,10 +501,10 @@ class IMDbCrawler:
             The MPAA of the movie
         """
         try:
-            # TODO
-            pass
+            return json.loads(soup.find('script',type='application/json').string)['props']['pageProps']['aboveTheFoldData']['certificate']['rating']
         except:
             print("failed to get mpaa")
+            return None
 
     def get_release_year(soup):
         """
@@ -500,10 +520,10 @@ class IMDbCrawler:
             The release year of the movie
         """
         try:
-            # TODO
-            pass
+            return json.loads(soup.find('script',type='application/json').string)['props']['pageProps']['aboveTheFoldData']['releaseYear']['year']
         except:
             print("failed to get release year")
+            return None
 
     def get_languages(soup):
         """
@@ -519,8 +539,11 @@ class IMDbCrawler:
             The languages of the movie
         """
         try:
-            # TODO
-            pass
+            languages_raw = json.loads(soup.find('script', type='application/json').string)['props']['pageProps']['mainColumnData']['spokenLanguages']['spokenLanguages']
+            languages = []
+            for l in languages_raw:
+                languages.append(l['text'])
+            return languages
         except:
             print("failed to get languages")
             return None
@@ -539,10 +562,14 @@ class IMDbCrawler:
             The countries of origin of the movie
         """
         try:
-            # TODO
-            pass
+            countries_raw = json.loads(soup.find('script', type='application/json').string)['props']['pageProps']['mainColumnData']['countriesOfOrigin']['countries']
+            countries = []
+            for c in countries_raw:
+                countries.append(c['text'])
+            return countries
         except:
             print("failed to get countries of origin")
+            return None
 
     def get_budget(soup):
         """
@@ -558,10 +585,10 @@ class IMDbCrawler:
             The budget of the movie
         """
         try:
-            # TODO
-            pass
+            return json.loads(soup.find('script', type='application/json').string)['props']['pageProps']['mainColumnData']['productionBudget']['budget']['amount']
         except:
             print("failed to get budget")
+            return None
 
     def get_gross_worldwide(soup):
         """
@@ -577,10 +604,10 @@ class IMDbCrawler:
             The gross worldwide of the movie
         """
         try:
-            # TODO
-            pass
+            return json.loads(soup.find('script', type='application/json').string)['props']['pageProps']['mainColumnData']['worldwideGross']['total']['amount']
         except:
             print("failed to get gross worldwide")
+            return None
 
 
 def main():
@@ -589,6 +616,12 @@ def main():
     #imdb_crawler.start_crawling()
     #imdb_crawler.write_to_file_as_json()
     #imdb_crawler.crawl_page_info('https://www.imdb.com/title/tt0111161/?ref_=chttp_t_1')
+    #imdb_crawler.extract_top_250()
+    r = imdb_crawler.crawl('https://www.imdb.com/title/tt0167260')
+    soup = BeautifulSoup(r.content, "html.parser")
+    #print(soup.find('script',type='application/json').string)
+    print(IMDbCrawler.get_gross_worldwide(soup))
+
 
 
 if __name__ == '__main__':
