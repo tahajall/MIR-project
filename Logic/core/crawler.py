@@ -25,7 +25,6 @@ class IMDbCrawler:
         crawling_threshold: int
             The number of pages to crawl
         """
-        # TODO
         self.crawling_threshold = crawling_threshold
         self.not_crawled = []
         self.crawled = []
@@ -53,19 +52,20 @@ class IMDbCrawler:
         """
         Save the crawled files into json
         """
-        # TODO
-        pass
+        with open("IMDB_crawled.json",'w') as f :
+            json.dump(self.crawled,f)
+        with open("IMDB_not_crawled.json",'w') as f:
+            json.dump(self.not_crawled,f)
 
     def read_from_file_as_json(self):
         """
         Read the crawled files from json
         """
-        # TODO
         with open('IMDB_crawled.json', 'r') as f:
-            self.crawled = None
+            self.crawled = json.load(f)
 
         with open('IMDB_not_crawled.json', 'w') as f:
-            self.not_crawled = None
+            self.not_crawled = json.load(f)
 
         self.added_ids = None
 
@@ -140,11 +140,6 @@ class IMDbCrawler:
     def start_crawling(self):
         """
         Start crawling the movies until the crawling threshold is reached.
-        TODO: 
-            replace WHILE_LOOP_CONSTRAINTS with the proper constraints for the while loop.
-            replace NEW_URL with the new URL to crawl.
-            replace THERE_IS_NOTHING_TO_CRAWL with the condition to check if there is nothing to crawl.
-            delete help variables.
 
         ThreadPoolExecutor is used to make the crawler faster by using multiple threads to crawl the pages.
         You are free to use it or not. If used, not to forget safe access to the shared resources.
@@ -199,7 +194,6 @@ class IMDbCrawler:
         URL: str
             The URL of the site
         """
-        # TODO
         soup = BeautifulSoup(res.content, "html.parser")
         movie['title'] = IMDbCrawler.get_title(soup)
         movie['first_page_summary'] = IMDbCrawler.get_first_page_summary(soup)
@@ -215,9 +209,14 @@ class IMDbCrawler:
         movie['languages'] = IMDbCrawler.get_languages(soup)
         movie['countries_of_origin'] = IMDbCrawler.get_countries_of_origin(soup)
         movie['rating'] = IMDbCrawler.get_rating(soup)
-        movie['summaries'] = IMDbCrawler.get_summary(soup)
-        movie['synopsis'] = IMDbCrawler.get_synopsis(soup)
-        movie['reviews'] = IMDbCrawler.get_reviews_with_scores(soup)
+        summary_url = IMDbCrawler.get_summary_link(URL)
+        summary_soup = BeautifulSoup(self.crawl(summary_url).content, 'html.parser')
+        movie['summaries'] = IMDbCrawler.get_summary(summary_soup)
+        movie['synopsis'] = IMDbCrawler.get_synopsis(summary_soup)
+        review_url = IMDbCrawler.get_review_link(URL)
+        review_soup = BeautifulSoup(self.crawl(review_url).content, 'html.parser')
+        movie['reviews'] = self.get_reviews_with_scores(review_soup)
+        print("ii")
 
     def get_summary_link(url):
         """
@@ -236,12 +235,12 @@ class IMDbCrawler:
             The URL of the summary page
         """
         try:
-            # TODO
-            pass
+            return url + "/plotsummary"
         except:
             print("failed to get summary link")
+            return None
 
-    def get_review_link(url):
+    def get_review_link(url:str):
         """
         Get the link to the review page of the movie
         Example:
@@ -249,10 +248,10 @@ class IMDbCrawler:
         https://www.imdb.com/title/tt0111161/reviews is the review page
         """
         try:
-            # TODO
-            pass
+            return url + "/reviews"
         except:
             print("failed to get review link")
+            return None
 
     def get_title(soup):
         """
@@ -401,10 +400,17 @@ class IMDbCrawler:
             The summary of the movie
         """
         try:
-            # TODO
-            pass
+            summaries_and_synopsis = json.loads(soup.find('script', type='application/json').string)['props']['pageProps']['contentData']['categories']
+            summaries = []
+            for s in summaries_and_synopsis:
+                if s['name'] == "Summaries":
+                    summaries_raw = s['section']['items']
+                    for sr in summaries_raw:
+                        summaries.append(sr['htmlContent'])
+            return summaries
         except:
             print("failed to get summary")
+            return None
 
     def get_synopsis(soup):
         """
@@ -420,12 +426,19 @@ class IMDbCrawler:
             The synopsis of the movie
         """
         try:
-            # TODO
-            pass
+            summaries_and_synopsis = json.loads(soup.find('script', type='application/json').string)['props']['pageProps']['contentData']['categories']
+            synopsis = []
+            for s in summaries_and_synopsis:
+                if s['name'] == "Synopsis":
+                    synopsis_raw = s['section']['items']
+                    for sr in synopsis_raw:
+                        synopsis.append(sr['htmlContent'])
+            return synopsis
         except:
             print("failed to get synopsis")
+            return None
 
-    def get_reviews_with_scores(soup):
+    def get_reviews_with_scores(self,soup):
         """
         Get the reviews of the movie from the soup
         reviews structure: [[review,score]]
@@ -440,10 +453,36 @@ class IMDbCrawler:
             The reviews of the movie
         """
         try:
-            # TODO
-            pass
+            link_elements = soup.select("a[href]")
+            urls = []
+            for link_element in link_elements:
+                url = link_element['href']
+                if url.startswith("/review") :
+                    split = url.split('/')
+                    urls.append('/' + split[1] + '/' + split[2])
+            temp_urls = set(urls)
+            urls = []
+            for url in temp_urls:
+                urls.append("https://www.imdb.com" + url)
+            urls = urls[:10]
+            reviews = []
+            for url in  urls:
+                r = self.crawl(url)
+                review_soup = BeautifulSoup(r.content,"html.parser")
+                review_data = json.loads(review_soup.find('script', type='application/ld+json').string)
+                try:
+                    review = review_data['reviewBody']
+                except:
+                    review = None
+                try:
+                    score = review_data['reviewRating']['ratingValue']
+                except:
+                    score = None
+                reviews.append([review,score])
+            return reviews
         except:
             print("failed to get reviews")
+            return None
 
     def get_genres(soup):
         """
@@ -611,16 +650,11 @@ class IMDbCrawler:
 
 
 def main():
-    imdb_crawler = IMDbCrawler(crawling_threshold=600)
+    imdb_crawler = IMDbCrawler(crawling_threshold=1000)
     # imdb_crawler.read_from_file_as_json()
-    #imdb_crawler.start_crawling()
-    #imdb_crawler.write_to_file_as_json()
-    #imdb_crawler.crawl_page_info('https://www.imdb.com/title/tt0111161/?ref_=chttp_t_1')
-    #imdb_crawler.extract_top_250()
-    r = imdb_crawler.crawl('https://www.imdb.com/title/tt0167260')
-    soup = BeautifulSoup(r.content, "html.parser")
-    #print(soup.find('script',type='application/json').string)
-    print(IMDbCrawler.get_gross_worldwide(soup))
+    imdb_crawler.start_crawling()
+    imdb_crawler.write_to_file_as_json()
+
 
 
 
