@@ -1,3 +1,5 @@
+from typing import List
+
 import requests
 from requests import get
 from bs4 import BeautifulSoup
@@ -481,8 +483,9 @@ class IMDbCrawler:
             for url in temp_urls:
                 urls.append("https://www.imdb.com" + url)
             urls = urls[:10]
-            reviews = []
+            reviews = List[List[str]]
             for url in  urls:
+                review_entry = List[str]
                 r = self.crawl(url)
                 review_soup = BeautifulSoup(r.content,"html.parser")
                 review_data = json.loads(review_soup.find('script', type='application/ld+json').string)
@@ -494,7 +497,9 @@ class IMDbCrawler:
                     score = review_data['reviewRating']['ratingValue']
                 except:
                     score = None
-                reviews.append([review,score])
+                review_entry.append(review)
+                review_entry.append(score)
+                reviews.append(review_entry)
             return reviews
         except:
             print("failed to get reviews")
