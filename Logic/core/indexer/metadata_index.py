@@ -14,6 +14,10 @@ class Metadata_index:
         """
         
         #TODO
+        self.path = path
+        self.documents = None
+        self.metadata_index = None
+
 
     def read_documents(self):
         """
@@ -22,6 +26,12 @@ class Metadata_index:
         """
 
         #TODO
+        try:
+            with open(self.path,'r') as f :
+                self.documents = json.load(f)
+                f.close()
+        except:
+            print('Error')
 
     def create_metadata_index(self):    
         """
