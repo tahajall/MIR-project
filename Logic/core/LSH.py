@@ -4,7 +4,7 @@ import random
 
 
 class MinHashLSH:
-    def __init__(self, documents, num_hashes):
+    def __init__(self, documents : list, num_hashes : int):
         """
         Initialize the MinHashLSH
 
@@ -18,7 +18,7 @@ class MinHashLSH:
         self.documents = documents
         self.num_hashes = num_hashes
 
-    def shingle_document(self, document, k=2):
+    def shingle_document(self, document, k=2) -> set:
         """
         Convert a document into a set of shingles.
 
@@ -34,7 +34,15 @@ class MinHashLSH:
         set
             A set of shingles.
         """
-        shingles = None
+        shingles = []
+        word_list = document.split()
+        for i in range(len(word_list)-k + 1) :
+            shingle = ''
+            for j in range(k):
+                shingle += word_list[i+j] + " "
+            shingles.append(shingle.strip())
+        shingles = set(shingles)
+
         return shingles
 
     def build_characteristic_matrix(self):
@@ -46,8 +54,16 @@ class MinHashLSH:
         numpy.ndarray
             The binary characteristic matrix.
         """
-        # TODO
-        return
+        all_shingles = self.shingle_document(self.documents[0])
+        for document in self.documents:
+            all_shingles = all_shingles | self.shingle_document(document)
+        matrix = np.zeros((len(all_shingles),len(self.documents)),dtype=int)
+        all_shingles = list(all_shingles)
+        for document in self.documents:
+            for shingle in all_shingles:
+                if shingle in document:
+                    matrix[all_shingles.index(shingle),self.documents.index(document)] = 1
+        return matrix
 
     def min_hash_signature(self):
         """
@@ -160,3 +176,7 @@ class MinHashLSH:
 
         # a good score is around 0.8
         print("your final score in near duplicate detection:", correct_near_duplicates / all_near_duplicates)
+
+lsh = MinHashLSH(['i am a pencil', 'i am a book'],2)
+lsh.build_characteristic_matrix()
+
