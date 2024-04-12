@@ -40,7 +40,12 @@ class DocumentLengthsIndex:
             the document's length in that field (where).
         """
 
-        # TODO:
+        document_lengths = {}
+        for doc_id in self.documents_index.keys():
+            document = self.documents_index[doc_id]
+            document_lengths.update({doc_id:len(document[where])})
+        return document_lengths
+
     
     def store_document_lengths_index(self, path , index_name):
         """

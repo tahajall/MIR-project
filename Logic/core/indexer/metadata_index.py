@@ -1,6 +1,7 @@
 from index_reader import Index_reader
 from indexes_enum import Indexes, Index_types
 import json
+import numpy as np
 
 class Metadata_index:
     def __init__(self, path='index/'):
@@ -13,10 +14,13 @@ class Metadata_index:
             The path to the indexes.
         """
         
-        #TODO
+
         self.path = path
         self.documents = None
         self.metadata_index = None
+        self.read_documents()
+        self.create_metadata_index()
+        self.store_metadata_index(path)
 
 
     def read_documents(self):
@@ -25,13 +29,10 @@ class Metadata_index:
         
         """
 
-        #TODO
-        try:
-            with open(self.path,'r') as f :
-                self.documents = json.load(f)
-                f.close()
-        except:
-            print('Error')
+        with open(self.path,'r') as f :
+            self.documents = json.load(f)
+            f.close()
+
 
     def create_metadata_index(self):    
         """
@@ -57,7 +58,9 @@ class Metadata_index:
             The field to get the document lengths for.
         """
 
-        #TODO
+        lengths = [len(field) for field in self.documents[where]]
+        lengths = np.array(lengths)
+        return np.mean(lengths)
 
     def store_metadata_index(self, path):
         """

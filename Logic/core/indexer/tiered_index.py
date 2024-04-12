@@ -61,7 +61,13 @@ class Tiered_index:
         first_tier = {}
         second_tier = {}
         third_tier = {}
-        #TODO
+
+        for index in current_index.keys():
+            for doc_id in current_index[index].keys():
+                if current_index[index][doc_id] >= first_tier_threshold:
+                    first_tier.update({index:{doc_id:current_index[index][doc_id]}})
+                elif current_index[index][doc_id] >= second_tier_threshold:
+                    second_tier.update({index:{doc_id:current_index[index][doc_id]}})
         return {
             "first_tier": first_tier,
             "second_tier": second_tier,

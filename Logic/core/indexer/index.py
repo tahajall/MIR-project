@@ -3,6 +3,7 @@ import os
 import json
 import copy
 from indexes_enum import Indexes
+import tiered_index
 
 
 class Index:
@@ -299,29 +300,14 @@ class Index:
 
         if index_type is None:
 
-            with open(path,'w') as f:
-                json.dump(self.index, f)
-                f.close()
+            tiered_index.Tiered_index(path)
 
         if index_type not in self.index:
             raise ValueError('Invalid index type')
 
-        if index_type == 'documents':
-            with open(path,'w') as f:
-                json.dump(self.index[Indexes.DOCUMENTS.value], f)
-                f.close()
-        if index_type == 'stars':
-            with open(path,'w') as f:
-                json.dump(self.index[Indexes.STARS.value], f)
-                f.close()
-        if index_type == 'genres':
-            with open(path,'w') as f:
-                json.dump(self.index[Indexes.GENRES.value], f)
-                f.close()
-        if index_type == 'summaries':
-            with open(path,'w') as f:
-                json.dump(self.index[Indexes.SUMMARIES.value], f)
-                f.close()
+        path = path + index_type  + "_index.json"
+        with open(path, "w") as file:
+            json.dump(self.index[index_type], file, indent=4)
 
     def load_index(self, path: str, index_type: str = None):
         """
