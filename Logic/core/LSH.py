@@ -74,10 +74,25 @@ class MinHashLSH:
         numpy.ndarray
             The Min-Hash signatures matrix.
         """
-        # TODO
-        return
+        prime = 4294967311
+        #prime = 7
+        characteristic_matrix = self.build_characteristic_matrix()
+        n , m = characteristic_matrix.shape
+        hashes = [(random.randint(1,n),random.randint(1,n)) for i in range(self.num_hashes)]
+        signature_matrix = [[np.inf for i in range(m)] for j in range(self.num_hashes)]
+        signature_matrix = np.array(signature_matrix )
+        for i in range(m):
+            for j in range(len(hashes)):
+                a , b = hashes[j]
+                for k in range(n):
+                    if characteristic_matrix[k,i] == 1 :
+                        h = (a + k * b) % prime
+                        if h < signature_matrix[j,i]:
+                            signature_matrix[j,i] = h
 
-    def lsh_buckets(self, signature, bands=10, rows_per_band=10):
+        return signature_matrix.astype(int)
+
+    def lsh_buckets(self, signature, bands=10, rows_per_band=10, number_of_buckets = 30):
         """
         Group documents into Locality-Sensitive Hashing (LSH) buckets based on Min-Hash signatures.
 
@@ -95,10 +110,28 @@ class MinHashLSH:
         dict
             A dictionary mapping bucket IDs to lists of document indices.
         """
-        # TODO
-        return
+        #
+        n , m = signature.shape
+        subvectors = []
+        for i in range(bands):
+            subvectors.append(signature[i*rows_per_band: (i+1)*rows_per_band])
+        subvectors = np.array(subvectors)
+        buckets = {}
+        for i in range(number_of_buckets):
+            buckets.update({i:[]})
+        for vector in subvectors:
+            strings = []
+            for i in range(m):
+                strings.append(','.join(vector[:,i].astype(str)))
+            for i in range(m):
+                for j in range(i+1,m):
+                    if strings[i] == strings[j]:
+                        x = random.randint(0,number_of_buckets-1)
+                        buckets[x].extend([i,j])
 
-    def perform_lsh(self):
+        return buckets
+
+    def perform_lsh(self, number_of_bands=10, number_of_rows = 10, number_of_buckets = 10):
         """
         Perform the entire Locality-Sensitive Hashing (LSH) process.
 
@@ -108,9 +141,10 @@ class MinHashLSH:
             A dictionary mapping bucket IDs to lists of document indices.
         """
         # TODO
-        return
+        signature_matrix = self.min_hash_signature()
+        return self.lsh_buckets(signature_matrix, bands=number_of_bands, rows_per_band=number_of_rows, number_of_buckets = number_of_buckets)
 
-    def jaccard_score(self, first_set, second_set):
+    def jaccard_score(self, first_set:set, second_set:set):
         """
         Calculate jaccard score for two sets.
 
@@ -126,10 +160,11 @@ class MinHashLSH:
         float
             Jaccard score.
         """
-        # TODO
-        pass
+        union = first_set | second_set
+        intersection = first_set & second_set
+        return len(intersection) / len(union)
 
-    def jaccard_similarity_test(self, buckets, all_documents):
+    def jaccard_similarity_test(self, buckets, all_documents:list):
         """
         Test your near duplicate detection code based on jaccard similarity.
 
@@ -176,7 +211,4 @@ class MinHashLSH:
 
         # a good score is around 0.8
         print("your final score in near duplicate detection:", correct_near_duplicates / all_near_duplicates)
-
-lsh = MinHashLSH(['i am a pencil', 'i am a book'],2)
-lsh.build_characteristic_matrix()
 
