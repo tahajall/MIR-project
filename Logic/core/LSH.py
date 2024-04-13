@@ -140,7 +140,7 @@ class MinHashLSH:
         dict
             A dictionary mapping bucket IDs to lists of document indices.
         """
-        # TODO
+        #
         signature_matrix = self.min_hash_signature()
         return self.lsh_buckets(signature_matrix, bands=number_of_bands, rows_per_band=number_of_rows, number_of_buckets = number_of_buckets)
 

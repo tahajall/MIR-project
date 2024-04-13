@@ -1,5 +1,5 @@
-from index_reader import Index_reader
-from indexes_enum import Indexes, Index_types
+from .index_reader import Index_reader
+from .indexes_enum import Indexes, Index_types
 import json
 import numpy as np
 
@@ -29,7 +29,7 @@ class Metadata_index:
         
         """
 
-        with open(self.path,'r') as f :
+        with open(self.path + "preprocessed_data.json",'r') as f :
             self.documents = json.load(f)
             f.close()
 
@@ -46,7 +46,7 @@ class Metadata_index:
         }
         metadata_index['document_count'] = len(self.documents)
 
-        return metadata_index
+        self.metadata_index = metadata_index
     
     def get_average_document_field_length(self,where):
         """
@@ -58,7 +58,12 @@ class Metadata_index:
             The field to get the document lengths for.
         """
 
-        lengths = [len(field) for field in self.documents[where]]
+        lengths = []
+        for doc in self.documents:
+            if doc[where] :
+                lengths.append(len(doc[where]))
+            else:
+                lengths.append(0)
         lengths = np.array(lengths)
         return np.mean(lengths)
 

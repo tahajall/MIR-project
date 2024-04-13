@@ -2,8 +2,8 @@ import time
 import os
 import json
 import copy
-from indexes_enum import Indexes
-import tiered_index
+from .indexes_enum import Indexes
+from .tiered_index import Tiered_index
 
 
 class Index:
@@ -54,8 +54,9 @@ class Index:
         for doc in self.preprocessed_documents:
             stars = doc['stars']
             stars_words = []
-            for star in stars:
-                stars_words.extend(star.split())
+            if stars:
+                for star in stars:
+                    stars_words.extend(star.split())
             for word in set(stars_words):
                 if word not in index_stars.keys():
                     index_stars.update({word:{doc['id']:stars_words.count(word)}})
@@ -79,8 +80,9 @@ class Index:
         for doc in self.preprocessed_documents:
             genres = doc['genres']
             genres_words = []
-            for genre in genres:
-                genres_words.extend(genre.split())
+            if genres:
+                for genre in genres:
+                    genres_words.extend(genre.split())
             for word in set(genres_words):
                 if word not in index_genres.keys():
                     index_genres.update({word: {doc['id']: genres_words.count(word)}})
@@ -103,8 +105,9 @@ class Index:
         for doc in self.preprocessed_documents:
             summaries = doc['summaries']
             summaries_words = []
-            for summary in summaries:
-                summaries_words.extend(summary.split())
+            if summaries:
+                for summary in summaries:
+                    summaries_words.extend(summary.split())
             for word in set(summaries_words):
                 if word not in current_index.keys():
                     current_index.update({word: {doc['id']: summaries_words.count(word)}})
@@ -169,7 +172,7 @@ class Index:
                 self.index[Indexes.GENRES.value].update({genre:{document['id']:genres_tf[genre]}})
             else:
                 if document['id'] not in self.index[Indexes.GENRES.value][genre].keys():
-                    self.index[Indexes.GENRES.value][genre].update({document:genres_tf[genre]})
+                    self.index[Indexes.GENRES.value][genre].update({document['id']:genres_tf[genre]})
                 else:
                     self.index[Indexes.GENRES.value][genre][document['id']] += genres_tf[genre]
 
@@ -183,7 +186,7 @@ class Index:
             if star not in self.index[Indexes.STARS.value]:
                 self.index[Indexes.STARS.value].update({star:{document['id']:stars_tf[star]}})
             else:
-                if document['id'] not in self.index[Indexes.STARS.value][star]:
+                if document['id'] not in self.index[Indexes.STARS.value][star].keys():
                     self.index[Indexes.STARS.value][star].update({document['id']:stars_tf[star]})
                 else:
                     self.index[Indexes.STARS.value][star][document['id']] += stars_tf[star]
@@ -198,7 +201,7 @@ class Index:
             if word not in self.index[Indexes.SUMMARIES.value]:
                 self.index[Indexes.SUMMARIES.value].update({word:{document['id']:summary_tf[word]}})
             else:
-                if document['id'] not in self.index[Indexes.SUMMARIES.value]:
+                if document['id'] not in self.index[Indexes.SUMMARIES.value][word].keys():
                     self.index[Indexes.SUMMARIES.value][word].update({document['id']:summary_tf[word]})
                 else:
                     self.index[Indexes.SUMMARIES.value][word][document['id']] += summary_tf[word]
@@ -300,14 +303,14 @@ class Index:
 
         if index_type is None:
 
-            tiered_index.Tiered_index(path)
+            Tiered_index(path)
+        else:
+            if index_type not in self.index :
+                raise ValueError('Invalid index type')
 
-        if index_type not in self.index:
-            raise ValueError('Invalid index type')
-
-        path = path + index_type  + "_index.json"
-        with open(path, "w") as file:
-            json.dump(self.index[index_type], file, indent=4)
+            path = path + index_type  + "_index.json"
+            with open(path, "w") as file:
+                json.dump(self.index[index_type], file, indent=4)
 
     def load_index(self, path: str, index_type: str = None):
         """
@@ -418,7 +421,7 @@ class Index:
         if set(docs).issubset(set(posting_list)):
             print('Indexing is correct')
 
-            if implemented_time < brute_force_time:
+            if implemented_time <= brute_force_time:
                 print('Indexing is good')
                 return True
             else:
