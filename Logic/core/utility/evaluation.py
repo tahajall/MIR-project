@@ -1,6 +1,9 @@
 
 from typing import List
 
+import numpy as np
+
+
 class Evaluation:
 
     def __init__(self, name: str):
@@ -23,9 +26,15 @@ class Evaluation:
             The precision of the predicted results
         """
         precision = 0.0
+        correct_predicted = []
+        number_of_predicted = 0
+        for i, result in enumerate(predicted):
+            actual_result = actual[i]
+            number_of_predicted += len(result)
+            correct_predicted.extend(list(set(result).intersection(set(actual_result))))
+        precision = len(correct_predicted) / number_of_predicted
 
-        # TODO: Calculate precision here
-        
+
         return precision
     
     def calculate_recall(self, actual: List[List[str]], predicted: List[List[str]]) -> float:
@@ -46,7 +55,14 @@ class Evaluation:
         """
         recall = 0.0
 
-        # TODO: Calculate recall here
+
+        correct_predicted = []
+        number_of_actual = 0
+        for i, result in enumerate(predicted):
+            actual_result = actual[i]
+            number_of_actual += len(actual_result)
+            correct_predicted.extend(list(set(result).intersection(set(actual_result))))
+        recall = len(correct_predicted) / number_of_actual
 
         return recall
     
@@ -68,7 +84,10 @@ class Evaluation:
         """
         f1 = 0.0
 
-        # TODO: Calculate F1 here
+
+        presicion = self.calculate_precision(actual,predicted)
+        recall = self.calculate_recall(actual,predicted)
+        f1 = (presicion*recall) / (presicion+recall)
 
         return f1
     
@@ -112,7 +131,18 @@ class Evaluation:
         """
         MAP = 0.0
 
-        # TODO: Calculate MAP here
+
+        APs = []
+        correct_predicted = []
+        number_of_predicted = 0
+        for i, result in enumerate(predicted):
+            actual_result = actual[i]
+            number_of_predicted += len(result)
+            correct_predicted.extend(list(set(result).intersection(set(actual_result))))
+            APs.append(len(correct_predicted)/number_of_predicted)
+        APs = np.array(APs)
+        MAP = np.mean(APs)
+
 
         return MAP
     
@@ -233,7 +263,16 @@ class Evaluation:
         """
         print(f"name = {self.name}")
 
-        #TODO: Print the evaluation metrics
+
+        print(f"precision = {precision}")
+        print(f"recall = {recall}")
+        print(f"f1 = {f1}")
+        print(f"ap = {ap}")
+        print(f"map = {map}")
+        print(f"dcg = {dcg}")
+        print(f"ndcg = {ndcg}")
+        print(f"rr = {rr}")
+        print(f"mrr = {mrr}")
       
 
     def log_evaluation(self, precision, recall, f1, ap, map, dcg, ndcg, rr, mrr):

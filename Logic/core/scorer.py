@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 
 class Scorer:    
@@ -65,8 +67,11 @@ class Scorer:
         """
         idf = self.idf.get(term, None)
         if idf is None:
-            # TODO
-            pass
+            list_of_documents = []
+            if term in self.index.keys():
+                list_of_documents.extend(self.index[term].keys())
+            df = len(list_of_documents)
+            idf = math.log(self.N/df)
         return idf
     
     def get_query_tfs(self, query):
@@ -84,7 +89,10 @@ class Scorer:
             A dictionary of the term frequencies of the terms in the query.
         """
         
-        #TODO
+
+        query_tfs = {term:query.count(term) for term in query}
+        return query_tfs
+
 
 
     def compute_scores_with_vector_space_model(self, query, method):
@@ -105,7 +113,52 @@ class Scorer:
         """
 
         # TODO
-        pass
+        method = method.split('.')
+        doc_method = method[0]
+        query_method = method[1]
+        docs = self.get_list_of_documents(query)
+        idfs = {term:self.get_idf(term) for term in query}
+        query_tf = self.get_query_tfs(query)
+        query_scores = []
+        for term in query:
+            term_tf = query_tf[term]
+            if query_method[0] == 'l':
+                term_tf = 1 + math.log(term_tf)
+            term_idf = 1
+            if query_method[1] == 't':
+                term_idf = idfs[term]
+            query_scores.append(term_idf*term_tf)
+        query_scores = np.array(query_scores)
+        if query_method[2] == 'c':
+            weight = np.dot(query_scores,query_scores)
+            query_scores = weight * query_scores
+        query_score = {}
+        for i,term in enumerate(query):
+            query_score.update({term:query_scores[i]})
+
+
+        scores = {}
+        for doc in docs:
+            doc_scores = []
+            for term in query:
+                doc_tf = self.index[term][doc]
+                if doc_method[0] == 'l':
+                    doc_tf = 1 + math.log(doc_tf)
+                doc_idf = 1
+                if doc_method[1] == 't':
+                    doc_idf = idfs[term]
+                doc_scores.append(doc_tf*doc_idf)
+            doc_scores = np.array(doc_scores)
+            if doc_method[2] == 'c':
+                weight = np.dot(doc_scores,doc_scores)
+                doc_scores = weight * doc_scores
+            score = 0
+            for i,term in enumerate(query):
+                score += query_score[term] * doc_scores[i]
+            scores.update({doc:score})
+
+
+        return scores
 
     def get_vector_space_model_score(self, query, query_tfs, document_id, document_method, query_method):
         """
