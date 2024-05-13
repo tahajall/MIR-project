@@ -134,5 +134,3 @@ class Preprocessor:
         clean_words = [ word for word in words if word not in self.stopwords ]
         return clean_words
 
-pre = Preprocessor([])
-pre.normalize("I am a superior being this is awesome")
