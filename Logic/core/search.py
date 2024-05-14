@@ -1,7 +1,7 @@
 import json
 import numpy as np
-from .utility import Preprocessor, Scorer
-from .indexer import Indexes, Index_types, Index_reader
+from utility import Preprocessor, Scorer
+from indexer import Indexes, Index_types, Index_reader
 
 
 class SearchEngine:
@@ -10,7 +10,7 @@ class SearchEngine:
         Initializes the search engine.
 
         """
-        path = "/index"
+        path = "/indexer/stored_index/"
         self.document_indexes = {
             Indexes.STARS: Index_reader(path, Indexes.STARS),
             Indexes.GENRES: Index_reader(path, Indexes.GENRES),

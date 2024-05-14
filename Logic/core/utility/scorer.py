@@ -112,7 +112,7 @@ class Scorer:
             A dictionary of the document IDs and their scores.
         """
 
-        # TODO
+
         method = method.split('.')
         doc_method = method[0]
         query_method = method[1]
@@ -233,3 +233,90 @@ class Scorer:
 
         # TODO
         pass
+
+    def compute_scores_with_unigram_model(
+            self, query, smoothing_method, document_lengths=None, alpha=0.5, lamda=0.5
+    ):
+        """
+        Calculates the scores for each document based on the unigram model.
+
+        Parameters
+        ----------
+        query : str
+            The query to search for.
+        smoothing_method : str (bayes | naive | mixture)
+            The method used for smoothing the probabilities in the unigram model.
+        document_lengths : dict
+            A dictionary of the document lengths. The keys are the document IDs, and the values are
+            the document's length in that field.
+        alpha : float, optional
+            The parameter used in bayesian smoothing method. Defaults to 0.5.
+        lamda : float, optional
+            The parameter used in some smoothing methods to balance between the document
+            probability and the collection probability. Defaults to 0.5.
+
+        Returns
+        -------
+        float
+            A dictionary of the document IDs and their scores.
+        """
+
+        documents = self.get_list_of_documents(query)
+        scores = {}
+        for doc in documents:
+            doc_score = self.compute_score_with_unigram_model(query,doc,smoothing_method,document_lengths,alpha,lamda)
+            scores.update({doc:doc_score})
+        return scores
+
+
+    def compute_score_with_unigram_model(
+            self, query, document_id, smoothing_method, document_lengths, alpha, lamda
+    ):
+        """
+        Calculates the scores for each document based on the unigram model.
+
+        Parameters
+        ----------
+        query : str
+            The query to search for.
+        document_id : str
+            The document to calculate the score for.
+        smoothing_method : str (bayes | naive | mixture)
+            The method used for smoothing the probabilities in the unigram model.
+        document_lengths : dict
+            A dictionary of the document lengths. The keys are the document IDs, and the values are
+            the document's length in that field.
+        alpha : float, optional
+            The parameter used in bayesian smoothing method. Defaults to 0.5.
+        lamda : float, optional
+            The parameter used in some smoothing methods to balance between the document
+            probability and the collection probability. Defaults to 0.5.
+
+        Returns
+        -------
+        float
+            The Unigram score of the document for the query.
+        """
+
+
+        terms = query.split()
+        score = 1
+        T = np.sum(document_lengths.values())
+        for term in terms:
+            if self.index[term][document_id]:
+                doc_tf = self.index[term][document_id]
+            else:
+                doc_tf = 0
+            term_cf = 0
+            for doc in self.index[term].keys :
+                term_cf += self.index[term][doc]
+            Ld = document_lengths[document_id]
+            term_score = 0
+            if smoothing_method == "bayes":
+                term_score = (doc_tf+(alpha*term_cf/T))/(Ld + alpha)
+            elif smoothing_method == "mixture":
+                term_score = lamda*(doc_tf/Ld) + (1-lamda)*(term_cf/T)
+            elif smoothing_method == "naive":
+                term_score = doc_tf/Ld
+            score *= term_score
+        return score
