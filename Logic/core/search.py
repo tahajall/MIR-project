@@ -1,7 +1,10 @@
 import json
 import numpy as np
-from utility import Preprocessor, Scorer
-from indexer import Indexes, Index_types, Index_reader
+from utility.preprocess import Preprocessor
+from utility.scorer import Scorer
+from indexer.index import Indexes
+from indexer.indexes_enum import Index_types
+from indexer.index_reader import Index_reader
 
 
 class SearchEngine:
@@ -10,7 +13,7 @@ class SearchEngine:
         Initializes the search engine.
 
         """
-        path = "/indexer/stored_index/"
+        path = "C:/Users/ASUS/PycharmProjects/MIR-project/Logic/core/indexer/stored_index/"
         self.document_indexes = {
             Indexes.STARS: Index_reader(path, Indexes.STARS),
             Indexes.GENRES: Index_reader(path, Indexes.GENRES),
@@ -37,6 +40,7 @@ class SearchEngine:
         self.metadata_index = Index_reader(
             path, Indexes.DOCUMENTS, Index_types.METADATA
         )
+
 
     def search(
         self,
@@ -116,8 +120,16 @@ class SearchEngine:
         final_scores : dict
             The final scores of the documents.
         """
-        # TODO
-        pass
+
+        for field in scores.keys():
+            field_scores = scores[field]
+            w = weights[field]
+            for doc in field_scores.keys():
+                field_scores[doc] *= w
+        score1 = self.merge_scores(scores[Indexes.STARS],scores[Indexes.GENRES])
+        final_scores = self.merge_scores(score1,scores[Indexes.SUMMARIES])
+        return final_scores
+
 
     def find_scores_with_unsafe_ranking(
         self, query, method, weights, max_results, scores
@@ -185,8 +197,17 @@ class SearchEngine:
             The parameter used in some smoothing methods to balance between the document
             probability and the collection probability. Defaults to 0.5.
         """
-        # TODO
-        pass
+        #
+
+        stars_scorer = Scorer(self.document_indexes[Indexes.STARS].index,int(self.metadata_index.index['document_count']))
+        star_scores = stars_scorer.compute_scores_with_unigram_model(query,smoothing_method,self.document_lengths_index[Indexes.STARS].index,alpha,lamda)
+        genres_scorer = Scorer(self.document_indexes[Indexes.GENRES].index,int(self.metadata_index.index['document_count']))
+        genres_scores = genres_scorer.compute_scores_with_unigram_model(query,smoothing_method,self.document_lengths_index[Indexes.GENRES].index,alpha,lamda)
+        summaries_scorer = Scorer(self.document_indexes[Indexes.SUMMARIES].index,int(self.metadata_index.index['document_count']))
+        summaries_scores = summaries_scorer.compute_scores_with_unigram_model(query,smoothing_method,self.document_lengths_index[Indexes.SUMMARIES].index,alpha,lamda)
+        scores = { Indexes.STARS:star_scores, Indexes.GENRES:genres_scores, Indexes.SUMMARIES:summaries_scores}
+        return scores
+
 
     def merge_scores(self, scores1, scores2):
         """
@@ -205,14 +226,33 @@ class SearchEngine:
             The merged dictionary of scores.
         """
 
-        # TODO
+
+        scores1 = dict(sorted(scores1.items()))
+        scores2 = dict(sorted(scores2.items()))
+        merged_scores = {}
+        for doc1 in scores1.keys():
+            for doc2 in scores2.keys():
+                if doc1 == doc2:
+                    merged_scores.update({doc1:scores1[doc1]+scores2[doc2]})
+                    break
+                if doc1 < doc2:
+                    merged_scores.update({doc1: scores1[doc1] })
+                    break
+                if doc2 < doc1:
+                    merged_scores.update({doc2:scores2[doc2]})
+        return merged_scores
+
+
+
+
 
 
 if __name__ == "__main__":
     search_engine = SearchEngine()
-    query = "spider man in wonderland"
-    method = "lnc.ltc"
-    weights = {Indexes.STARS: 1, Indexes.GENRES: 1, Indexes.SUMMARIES: 1}
-    result = search_engine.search(query, method, weights)
+    #query = "spider man in wonderland"
+    #method = "lnc.ltc"
+    #weights = {Indexes.STARS: 1, Indexes.GENRES: 1, Indexes.SUMMARIES: 1}
+    #result = search_engine.search(query, method, weights)
 
-    print(result)
+    #print(result)
+

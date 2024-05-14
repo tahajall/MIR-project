@@ -2,8 +2,8 @@ import time
 import os
 import json
 import copy
-from indexes_enum import Indexes
-import tiered_index
+from .indexes_enum import Indexes
+from .tiered_index import Tiered_index
 
 
 class Index:
@@ -303,7 +303,7 @@ class Index:
 
         if index_type is None:
 
-            tiered_index.Tiered_index(path)
+            Tiered_index(path)
         else:
             if index_type not in self.index :
                 raise ValueError('Invalid index type')
