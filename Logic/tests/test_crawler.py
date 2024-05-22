@@ -50,6 +50,6 @@ expected_fields = {
     "synopsis": List[str],
     "reviews": List[List[str]],
 }
-json_file_path = "../core/IMDB_crawled.json"
+json_file_path = "../core/utility/IMDB_crawled.json"
 
 check_field_types(json_file_path, expected_fields)

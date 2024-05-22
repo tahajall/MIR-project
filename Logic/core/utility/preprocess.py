@@ -35,12 +35,14 @@ class Preprocessor:
             The preprocessed documents.
         """
         preprocessed_documents = []
-        for document in self.documents:
-            pre_document = self.remove_links(document)
-            pre_document = self.remove_punctuations(pre_document)
-            pre_document = self.normalize(pre_document)
-            preprocessed_documents.append(pre_document)
-        return preprocessed_documents
+        if self.documents:
+            for document in self.documents:
+                pre_document = self.remove_links(document)
+                pre_document = self.remove_punctuations(pre_document)
+                pre_document = self.normalize(pre_document)
+                preprocessed_documents.append(pre_document)
+            return preprocessed_documents
+        return self.documents
 
     def normalize(self, text: str):
         """
@@ -60,6 +62,7 @@ class Preprocessor:
         tokenized_text = self.remove_stopwords(text)
         lemmatized_list = [lemmatizer.lemmatize(word) for word in tokenized_text]
         lemmatized_text = ' '.join(lemmatized_list)
+        lemmatized_text = lemmatized_text.lower()
         return lemmatized_text
 
     def remove_links(self, text: str):

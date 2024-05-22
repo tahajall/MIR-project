@@ -1,6 +1,6 @@
 import json
-from .indexes_enum import Indexes,Index_types
-from .index_reader import Index_reader
+from indexes_enum import Indexes,Index_types
+from index_reader import Index_reader
 
 class DocumentLengthsIndex:
     def __init__(self,path='index/'):
@@ -43,7 +43,10 @@ class DocumentLengthsIndex:
         document_lengths = {}
         for doc_id in self.documents_index.keys():
             document = self.documents_index[doc_id]
-            document_lengths.update({doc_id:len(document[where])})
+            if document[where]:
+                document_lengths.update({doc_id:len(document[where])})
+            else:
+                document_lengths.update({doc_id: 0})
         return document_lengths
 
     

@@ -1,0 +1,84 @@
+{
+    "first_tier": {
+        "FilmNoir": {
+            "tt0033870": 1
+        },
+        "Drama": {
+            "tt9263550": 1
+        },
+        "Adventure": {
+            "tt0103639": 1
+        },
+        "Action": {
+            "tt9477520": 1
+        },
+        "Fantasy": {
+            "tt0991346": 1
+        },
+        "SciFi": {
+            "tt4262980": 1
+        },
+        "Comedy": {
+            "tt2181931": 1
+        },
+        "Romance": {
+            "tt0033870": 1
+        },
+        "War": {
+            "tt0084994": 1
+        },
+        "Biography": {
+            "tt9263550": 1
+        },
+        "History": {
+            "tt5013056": 1
+        },
+        "Crime": {
+            "tt0033870": 1
+        },
+        "Animation": {
+            "tt0103639": 1
+        },
+        "Family": {
+            "tt0871510": 1
+        },
+        "Musical": {
+            "tt0103639": 1
+        },
+        "Mystery": {
+            "tt0033870": 1
+        },
+        "Thriller": {
+            "tt15367466": 1
+        },
+        "Horror": {
+            "tt0991346": 1
+        },
+        "Music": {
+            "tt5076858": 1
+        },
+        "Sport": {
+            "tt0871510": 1
+        },
+        "Western": {
+            "tt0099088": 1
+        },
+        "Documentary": {
+            "tt0297749": 1
+        },
+        "Short": {
+            "tt6608388": 1
+        },
+        "News": {
+            "tt29765008": 1
+        },
+        "TalkShow": {
+            "tt5076858": 1
+        },
+        "RealityTV": {
+            "tt11967006": 1
+        }
+    },
+    "second_tier": {},
+    "third_tier": {}
+}
