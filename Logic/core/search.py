@@ -87,19 +87,19 @@ class SearchEngine:
 
         scores = {}
         if method == "unigram":
-            self.find_scores_with_unigram_model(
+            scores = self.find_scores_with_unigram_model(
                 query, smoothing_method, weights, scores, alpha, lamda
             )
         elif safe_ranking:
-            self.find_scores_with_safe_ranking(query, method, weights, scores)
+            scores = self.find_scores_with_safe_ranking(query, method, weights, scores)
         else:
-            self.find_scores_with_unsafe_ranking(
+            scores = self.find_scores_with_unsafe_ranking(
                 query, method, weights, max_results, scores
             )
 
         final_scores = {}
 
-        self.aggregate_scores(weights, scores, final_scores)
+        final_scores = self.aggregate_scores(weights, scores, final_scores)
 
         result = sorted(final_scores.items(), key=lambda x: x[1], reverse=True)
         if max_results is not None:
@@ -126,6 +126,7 @@ class SearchEngine:
             w = weights[field]
             for doc in field_scores.keys():
                 field_scores[doc] *= w
+
         score1 = self.merge_scores(scores[Indexes.STARS],scores[Indexes.GENRES])
         final_scores = self.merge_scores(score1,scores[Indexes.SUMMARIES])
         return final_scores
@@ -151,9 +152,16 @@ class SearchEngine:
             The scores of the documents.
         """
         for field in weights:
+            field_scores = {}
             for tier in ["first_tier", "second_tier", "third_tier"]:
-                # TODO
-                pass
+                scorer = Scorer(self.tiered_index[field].index[tier],self.metadata_index.index['document_count'])
+                if method == "okapiBM25":
+                    field_scores.update( scorer.compute_socres_with_okapi_bm25(query, self.metadata_index.index[
+                        "averge_document_length"][field.value], self.document_lengths_index[field].index))
+                else:
+                    field_scores.update( scorer.compute_scores_with_vector_space_model(query, method))
+            scores.update({field:field_scores})
+        return scores
 
     def find_scores_with_safe_ranking(self, query, method, weights, scores):
         """
@@ -172,8 +180,13 @@ class SearchEngine:
         """
 
         for field in weights:
-            # TODO
-            pass
+            scorer = Scorer(self.document_indexes[field].index,int(self.metadata_index.index['document_count']))
+            if method == "okapiBM25":
+                field_scores = scorer.compute_socres_with_okapi_bm25(query,self.metadata_index.index["averge_document_length"][field.value],self.document_lengths_index[field].index)
+            else:
+                field_scores = scorer.compute_scores_with_vector_space_model(query,method)
+            scores.update({field:field_scores})
+        return scores
 
     def find_scores_with_unigram_model(
         self, query, smoothing_method, weights, scores, alpha=0.5, lamda=0.5
@@ -225,6 +238,10 @@ class SearchEngine:
         dict
             The merged dictionary of scores.
         """
+        if not scores1:
+            if not scores2:
+                return scores1
+            return scores2
 
 
         scores1 = dict(sorted(scores1.items()))
@@ -249,10 +266,14 @@ class SearchEngine:
 
 if __name__ == "__main__":
     search_engine = SearchEngine()
-    #query = "spider man in wonderland"
+    #print(search_engine.document_indexes[Indexes.STARS].index)
+    #print(search_engine.metadata_index.index['document_count'])
+    query = "spider man in wonderland"
     #method = "lnc.ltc"
-    #weights = {Indexes.STARS: 1, Indexes.GENRES: 1, Indexes.SUMMARIES: 1}
-    #result = search_engine.search(query, method, weights)
+    method = "unigram"
+    smoothing_method = "bayes"
+    weights = {Indexes.STARS: 1, Indexes.GENRES: 1, Indexes.SUMMARIES: 1}
+    result = search_engine.search(query, method, weights, smoothing_method=smoothing_method)
 
-    #print(result)
+    print(result)
 

@@ -1,4 +1,4 @@
-from index_reader import Index_reader
+from .index_reader import Index_reader
 from .indexes_enum import Indexes, Index_types
 import json
 import numpy as np
@@ -46,7 +46,7 @@ class Metadata_index:
         }
         metadata_index['document_count'] = len(self.documents)
 
-        return metadata_index
+        self.metadata_index = metadata_index
     
     def get_average_document_field_length(self,where):
         """

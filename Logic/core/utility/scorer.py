@@ -301,14 +301,14 @@ class Scorer:
 
         terms = query.split()
         score = 1
-        T = np.sum(document_lengths.values())
+        T = np.sum(np.array(list(document_lengths.values())))
         for term in terms:
-            if self.index[term][document_id]:
+            if document_id in self.index[term]:
                 doc_tf = self.index[term][document_id]
             else:
                 doc_tf = 0
             term_cf = 0
-            for doc in self.index[term].keys :
+            for doc in self.index[term].keys() :
                 term_cf += self.index[term][doc]
             Ld = document_lengths[document_id]
             term_score = 0

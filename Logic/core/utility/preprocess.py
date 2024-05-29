@@ -17,7 +17,7 @@ class Preprocessor:
         #nltk.download('omw-1.4')
         self.documents = documents
         stopwords = []
-        with open("stopwords.txt",'r') as f :
+        with open("C:/Users/ASUS/PycharmProjects/MIR-project/Logic/core/utility/stopwords.txt",'r') as f :
             for w in f:
                 if w.endswith("\n"):
                     w = w.removesuffix("\n")
