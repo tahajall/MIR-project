@@ -30,8 +30,13 @@ class LinkAnalyzer:
         This function has no parameters. You can use self to get or change attributes
         """
         for movie in self.root_set:
-            #TODO
-            pass
+            self.graph.add_node(movie["id"])
+            self.hubs.append(movie["id"])
+            for star in movie["stars"]:
+                self.graph.add_node(star)
+                self.authorities.append(star)
+                self.graph.add_edge(movie["id"],star)
+
 
     def expand_graph(self, corpus):
         """
@@ -50,8 +55,21 @@ class LinkAnalyzer:
         and refer to the nodes in the root set to the graph and to the list of hubs and authorities.
         """
         for movie in corpus:
-            #TODO
-            pass
+            is_in_base_set = False
+            for star in movie["stars"]:
+                if star in self.authorities:
+                    is_in_base_set = True
+            if is_in_base_set:
+                if movie["id"] not in self.hubs:
+                    self.graph.add_node(movie["id"])
+                    self.hubs.append(movie["id"])
+                    for star in movie["stars"]:
+                        self.graph.add_node(star)
+                        self.graph.add_edge(movie["id"], star)
+                        if star not in self.authorities:
+                            self.authorities.append(star)
+
+
 
     def hits(self, num_iteration=5, max_result=10):
         """
@@ -71,12 +89,34 @@ class LinkAnalyzer:
         list
             List of names of 10 movies with the most scores obtained by Hits algorithm in descending order
         """
-        a_s = []
-        h_s = []
+        a_s = {}
+        h_s = {}
 
-        #TODO
+        for hub in self.hubs:
+            h_s.update({hub:1})
+        for authority in self.authorities:
+            a_s.update({authority:1})
 
-        return a_s, h_s
+
+        for i in range(num_iteration):
+            for hub in self.hubs:
+                successors = self.graph.get_successors(hub)
+                sum = 0
+                for successor in successors:
+                    sum += a_s[successor]
+                h_s[hub] = sum
+            for authority in self.authorities:
+                predecessors = self.graph.get_predecessors(authority)
+                sum = 0
+                for predecessor in predecessors:
+                    sum += h_s[predecessor]
+                a_s[authority] = sum
+
+        a_s = sorted(a_s,reverse=True)
+        h_s = sorted(h_s,reverse=True)
+
+
+        return a_s[:max_result], h_s[:max_result]
 
 if __name__ == "__main__":
     # You can use this section to run and test the results of your link analyzer
