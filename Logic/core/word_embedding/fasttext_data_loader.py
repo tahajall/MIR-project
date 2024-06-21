@@ -1,4 +1,5 @@
 import pandas as pd
+import json
 from tqdm import tqdm
 from sklearn.preprocessing import LabelEncoder
 
@@ -34,7 +35,11 @@ class FastTextDataLoader:
         ----------
             pd.DataFrame: A pandas DataFrame containing movie information (synopses, summaries, reviews, titles, genres).
         """
-        pass
+        with open(self.file_path, 'r') as file:
+            data = json.load(file)
+
+        df = pd.DataFrame(data)
+        return df
 
     def create_train_data(self):
         """

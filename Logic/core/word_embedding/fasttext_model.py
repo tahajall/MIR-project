@@ -218,12 +218,12 @@ class FastText:
             self.save_model(path)
 
 if __name__ == "__main__":
-    ft_model = FastText(preprocessor=preprocess_text, method='skipgram')
+    ft_model = FastText( method='skipgram')
 
     path = './Phase_1/index/'
-    ft_data_loader = FastTextDataLoader()
+    ft_data_loader = FastTextDataLoader(path)
 
-    X = ft_data_loader.create_train_data(path)
+    X = ft_data_loader.create_train_data()
 
     ft_model.train(X)
     ft_model.prepare(None, mode = "save")
